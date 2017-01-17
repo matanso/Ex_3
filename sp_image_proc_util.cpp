@@ -1,6 +1,13 @@
 #include "sp_image_proc_util.h"
-#include <opencv/cv.hpp>
-#include <opencv/highgui.h>
+#include <opencv2/imgproc.hpp>
+#include <opencv2/core.hpp>
+#include <opencv2/highgui.hpp>
+//#include <opencv2/features2d.hpp>
+#include <iostream>
+#include <opencv2/nonfree/features2d.hpp>
+#include <vector>
+
+
 
 #define IMG_LOAD_ERR "Image cannot be loaded - %s\n"
 #define DIVIDED_BY_THREE *0.33
@@ -20,28 +27,28 @@
 
 SPPoint **spGetRGBHist(const char *str, int imageIndex, int nBins) {
     cv::Mat img = cv::imread(str);
-    if(!img.data) {
+    if (!img.data) {
         printf(IMG_LOAD_ERR, str);
         return NULL;
     }
 
     int channels[3];
-    for(int i = 0; i < 3; i++) channels[i] = i;
+    for (int i = 0; i < 3; i++) channels[i] = i;
 
-    float range[] = { 0, 256 } ;
-    const float* histRange = { range };
+    float range[] = {0, 256};
+    const float *histRange = {range};
 
     bool uniform = true;
     bool accumulate = false;
 
     cv::Mat hist;
-    SPPoint **out = (SPPoint**) malloc(3 * sizeof(SPPoint *));
+    SPPoint **out = (SPPoint **) malloc(3 * sizeof(SPPoint *));
 
-    /// Compute the histograms:
-    for(int i = 0; i < 3; i++){
-        calcHist( &img, 1, &i, cv::Mat(), hist, 1, &nBins, &histRange, uniform, accumulate );
+/// Compute the histograms:
+    for (int i = 0; i < 3; i++) {
+        calcHist(&img, 1, &i, cv::Mat(), hist, 1, &nBins, &histRange, uniform, accumulate);
         double *data = (double *) malloc(nBins * sizeof(double));
-        for(int j = 0; j < nBins; j++) data[j] = hist.data[j];
+        for (int j = 0; j < nBins; j++) data[j] = hist.data[j];
         out[i] = spPointCreate(data, nBins, imageIndex);
     }
     return out;
@@ -58,10 +65,9 @@ SPPoint **spGetRGBHist(const char *str, int imageIndex, int nBins) {
  *		  otherwise the average L2-squared distance.
  */
 double spRGBHistL2Distance(SPPoint **rgbHistA, SPPoint **rgbHistB) {
-    if(rgbHistA == NULL || rgbHistB == NULL) return -1;
+    if (rgbHistA == NULL || rgbHistB == NULL) return -1;
     double s = 0;
-    for(int i = 0; i < 3; i++)
-    {
+    for (int i = 0; i < 3; i++) {
         s += spPointL2SquaredDistance(rgbHistA[i], rgbHistB[i]);
     }
     return s DIVIDED_BY_THREE;
@@ -94,6 +100,14 @@ double spRGBHistL2Distance(SPPoint **rgbHistA, SPPoint **rgbHistB) {
  */
 
 SPPoint **spGetSiftDescriptors(const char *str, int imageIndex, int nFeaturesToExtract, int *nFeatures) {
+/* // todo look at this
+ * Works with OpenCV 3.2.0
+ * download the shell script @ https://github.com/jayrambhia/Install-OpenCV
+ * Just read the tutorial, works for with ubuntu 16.04
+ * It includes nonfree/features2d
+ * Still have problem to run the program
+ * cv::SiftDescriptorExtractor.compute()
+ */
 
 }
 
