@@ -1,15 +1,19 @@
-#include "sp_image_proc_util.h"
 #include <opencv2/highgui.hpp> //imshow, drawKeypoints, waitKey
 #include <opencv2/imgproc.hpp>
 #include <opencv2/core.hpp>//Mat
 #include <opencv2/xfeatures2d.hpp>//SiftDescriptorExtractor
 #include <opencv2/features2d.hpp>
 #include <vector>
-#include <iostream>
+#include "sp_image_proc_util.h"
+
 #include "SPPoint.h"
 #include "SPBPriorityQueue.h"
 
 
+// extern "C" {
+// #include "SPPoint.h"
+// #include "SPBPriorityQueue.h"
+// } // todo find out if to put this in extern or not 
 
 
 #define IMG_LOAD_ERR "Image cannot be loaded - %s\n"
@@ -61,7 +65,8 @@ double spRGBHistL2Distance(SPPoint **rgbHistA, SPPoint **rgbHistB) {
 }
 
 
-SPPoint **spGetSiftDescriptors(const char *str, int imageIndex, int nFeaturesToExtract, int *nFeatures) {
+SPPoint **spGetSiftDescriptors(const char *str, int imageIndex, 
+                                int nFeaturesToExtract, int *nFeatures) {
     // Check if str is NULL argument
     if(str == NULL){ return NULL ;}
     // Check if nFeatures is NULL
@@ -102,8 +107,7 @@ SPPoint **spGetSiftDescriptors(const char *str, int imageIndex, int nFeaturesToE
 
     double* tmp_features = (double*) malloc(*nFeatures*sizeof(*tmp_features));
     for(int i = 0; i< *nFeatures; i++){
-        for (int j = 0; j < featuresDim; j++)
-        {
+        for (int j = 0; j < featuresDim; j++){
             tmp_features[j] = ds1.at<float>(i,j);
         }
         features[i] = spPointCreate(tmp_features, featuresDim, imageIndex);
