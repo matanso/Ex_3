@@ -14,22 +14,23 @@ extern "C" {
 #include "SPBPriorityQueue.h"
 }
 
-int readNumberForMessage(char * msg);
+int readNumberForMessage(const char * msg);
 
-void readStringForMessage(char* msg);
+void readStringForMessage(const char *msg, char *result);
 
-const char* mainAuxBuildPath(char* dir, char* prefix, int i, char* suffix);
+void mainAuxBuildPath(char* dir, char* prefix, int i, char* suffix, char *path);
 
-bool mainAuxGetParameters(char*dirPath,char*imgPrefix,char*imgSuffix,
-  int numOfImages,int nBins,int nFeaturesToExtract);
+bool mainAuxGetParameters(char *dirPath, char *imgPrefix, char *imgSuffix,
+                          int numOfImages, int nBins, int nFeaturesToExtract);
 
-void mainAuxPrintGlobalDescriptor(SPPoint*** imagesHist, SPPoint** queryHist,
-  int numberOfImages, int k);
+void mainAuxPrintGlobalDescriptor(SPPoint ***imagesHist, SPPoint **queryHist,
+                                  int numberOfImages, int k);
 
-void mainAuxPrintLocalDescriptor(SPPoint*** imagesSift, SPPoint** queryFeature,
-  int numberOfImages, int *nFeaturesPerImage, int k);
+void mainAuxPrintLocalDescriptor(SPPoint ***imagesSift, SPPoint **queryFeature,
+                                 int *numOfQueryFeatures, int numberOfImages,
+                                 int *nFeaturesPerImage, int k);
 
 void mainAuxPrintQueueIndex(SPBPQueue *queue);
 
-int stringCompare(char *a, char* b);
+int stringCompare(char *a, char *b);
 #endif

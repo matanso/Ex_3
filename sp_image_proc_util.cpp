@@ -62,7 +62,7 @@ double spRGBHistL2Distance(SPPoint **rgbHistA, SPPoint **rgbHistB) {
 
 
 SPPoint **spGetSiftDescriptors(const char *str, int imageIndex,
-                                int nFeaturesToExtract, int *nFeatures) {
+                               int nFeaturesToExtract, int *nFeatures) {
     // Check if str is NULL argument
     if(str == NULL){ return NULL ;}
     // Check if nFeatures is NULL
@@ -94,14 +94,14 @@ SPPoint **spGetSiftDescriptors(const char *str, int imageIndex,
     detect->detect(img, kp1, cv::Mat());
     detect->compute(img, kp1, ds1);
 
-    &nFeatures = ds1.rows;
+    *nFeatures = ds1.rows;
     featuresDim = ds1.cols;
 
     features = (SPPoint**) malloc(*nFeatures * sizeof(SPPoint*));
     if (features == NULL){ return NULL; }
 
 
-    double* tmp_features = (double*) malloc(&nFeatures*sizeof(*tmp_features));
+    double* tmp_features = (double*) malloc(*nFeatures*sizeof(*tmp_features));
     for(int i = 0; i< *nFeatures; i++){
         for (int j = 0; j < featuresDim; j++){
             tmp_features[j] = ds1.at<float>(i,j);
