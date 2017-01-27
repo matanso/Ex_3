@@ -40,7 +40,7 @@
     } while(0)
 
 
-int readNumberUsingMessage(char *msg) {
+int readNumberUsingMessage(const char *msg) {
     int number;
     printf("%s", msg);
     scanf("%d", &number);
@@ -48,7 +48,7 @@ int readNumberUsingMessage(char *msg) {
 
 }
 
-void readStringUsingMessage(char *msg, char *result) {
+void readStringUsingMessage(const char *msg, char *result) {
     // char dir_path[MAX_BUFFER_SIZE];
     printf("%s", msg);
     scanf("%s", result);
