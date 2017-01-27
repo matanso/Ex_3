@@ -1,9 +1,10 @@
 #include <opencv2/highgui.hpp> //imshow, drawKeypoints, waitKey
 #include <opencv2/imgproc.hpp>
 #include <opencv2/core.hpp>//Mat
-#include <opencv2/xfeatures2d.hpp>//SiftDescriptorExtractor
+//#include <opencv2/xfeatures2d.hpp>//SiftDescriptorExtractor
 #include <opencv2/features2d.hpp>
 #include <vector>
+#include "string.h"
 
 extern "C" {
 #include "SPPoint.h"
@@ -11,8 +12,7 @@ extern "C" {
 }
 
 #include "sp_image_proc_util.h"
-
-
+#include "main_aux.h"
 
 using namespace std;
 
@@ -24,47 +24,57 @@ using namespace std;
 
 
 int main() {
-	char dirPath[MAX_BUFFER_SIZE], imgPrefix[MAX_BUFFER_SIZE], imgSuffix[MAX_BUFFER_SIZE];
-	int numOfImages, nBins, nFeaturesToExtract;
-	char* stringParametars = (char*) malloc(3 * sizeof(char));
-	int* numericParametars = (int*) malloc(3 * sizeof(int));
+    char dirPath[MAX_BUFFER_SIZE], imgPrefix[MAX_BUFFER_SIZE], imgSuffix[MAX_BUFFER_SIZE];
+    int numOfImages, nBins, nFeaturesToExtract;
+    int *nFeaturesPerImage;
+    SPPoint **queryFeature, **queryHist;
+    SPPoint ***imagesHist, ***imagesSift;
+    // Input
+    numOfImages = nBins = nFeaturesToExtract = 0;
+    if (!mainAuxGetParameters(dirPath, imgPrefix, imgSuffix, numOfImages, nBins, nFeaturesToExtract)) {
+        return 0;
+    }
 
-	// Input
-	if(!mainAuxGetParameters(stringParametars, numericParametars)){
-		return 0;
-	}
-	dirPath = stringParametars[0];
-	imgPrefix = stringParametars[1];
-	imgSuffix = stringParametars[2];
-	numOfImages = numericParametars[0];
-	nBins = numericParametars[1];
-	nFeaturesToExtract = numericParametars[2];
+    if ((imagesHist = (SPPoint ***) malloc(numOfImages * sizeof(SPPoint **)))
+        == NULL) {
+        // TODO malloc error
+    }
+    if ((imagesSift = (SPPoint ***) malloc(numOfImages * sizeof(SPPoint **)))
+        == NULL) {
+        // TODO malloc error
+    }
 
-	SPPoint*** imagesHist = (SPPoint***) malloc(numOfImages * sizeof(SPPoint**))
-	SPPoint*** imagesSift = (SPPoint***) malloc(numOfImages * sizeof(SPPoint**))
-	int *nFeatures = (int*) malloc(numOfImages * sizeof(int));
-	// For each image in {dir_path} calculate histogram and SIFT
-	for (int i = 0; i < numOfImages; i++){
-		const char* path = mainAuxBuildPath(dir_path, prefix, i, suffix);
-		imagesHist[i] = spGetRGBHist(path, i, nBins);
-		imagesSift[i] = spGetSiftDescriptors(path, i, nFeaturesToExtract, nFeatures + i);
-	}
+    if ((nFeaturesPerImage = (int *) malloc(numOfImages * sizeof(int))) == NULL) {
+        // TODO malloc error
+    }
 
+    // For each image in {dir_path} calculate histogram and SIFT
+    for (int i = 0; i < numOfImages; i++) {
+        const char *path = mainAuxBuildPath(dirPath, imgPrefix, i, imgSuffix);
+        imagesHist[i] = spGetRGBHist(dirPath, i, nBins);
+        imagesSift[i] = spGetSiftDescriptors(path, i, nFeaturesToExtract,
+                                             nFeaturesPerImage + i);
+    }
 
-	const char decisonStr[MAX_BUFFER_SIZE];
-	printf(DECISION_MSG);
-	scanf("%s",decisonStr)
+    char decisonStr[MAX_BUFFER_SIZE];
+    printf(DECISION_MSG);
+    scanf("%s", decisonStr);
 
-	if(strcmp(decisonStr, '#')){
-		printf(EXIT_MSG);
-		return 0;
-	}
+    if (decisonStr[0] == '#') {
+        printf(EXIT_MSG);
+        return 0;
+    }
 
-	int *queryNumberOfFeature;
-	SPPoint *queryHist = spGetRGBHist(decisonStr, -1, nBins);
-	SPPoint *queryFeature = spGetSiftDescriptors(decisonStr, -1, nFeaturesToExtract, numOfQueryFeatures);
+    // TODO Can we get rid of it?
+    int *numOfQueryFeatures = 0;
 
-	// mainAuxGetGlobalDescriptor();
+    queryHist = spGetRGBHist(decisonStr, -1, nBins);
+    queryFeature = spGetSiftDescriptors(decisonStr, -1, nFeaturesToExtract, numOfQueryFeatures);
+    // free(queryNumberOfFeature);
+
+    mainAuxPrintGlobalDescriptor(imagesHist, queryHist, numOfImages, 5);
+
+    mainAuxPrintLocalDescriptor(imagesSift, queryFeature, numOfQueryFeatures, numOfImages, nFeaturesPerImage, 5);
 
     return 0;
 }

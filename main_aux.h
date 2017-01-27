@@ -16,12 +16,21 @@ extern "C" {
 
 int readNumberForMessage(char * msg);
 
-char* readStringForMessage(char* msg);
+void readStringForMessage(char *msg);
 
 const char* mainAuxBuildPath(char* dir, char* prefix, int i, char* suffix);
 
-bool mainAuxGetParameters(char** stringParametars,int* numericParametars);
+bool mainAuxGetParameters(char *dirPath, char *imgPrefix, char *imgSuffix,
+                          int numOfImages, int nBins, int nFeaturesToExtract);
 
-void mainAuxGetGlobalDescriptor(SPPoint*** imagesHist, SPPoint* queryHist, int k);
+void mainAuxPrintGlobalDescriptor(SPPoint ***imagesHist, SPPoint **queryHist,
+                                  int numberOfImages, int k);
 
+void mainAuxPrintLocalDescriptor(SPPoint ***imagesSift, SPPoint **queryFeature,
+                                 int numOfQueryFeatures, int numberOfImages,
+                                 int *nFeaturesPerImage, int k);
+
+void mainAuxPrintQueueIndex(SPBPQueue *queue);
+
+int stringCompare(char *a, char *b);
 #endif
