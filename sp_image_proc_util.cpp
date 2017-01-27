@@ -13,11 +13,10 @@
 // extern "C" {
 // #include "SPPoint.h"
 // #include "SPBPriorityQueue.h"
-// } // todo find out if to put this in extern or not 
+// } TODO find out if to put this in extern or not
 
 
 #define IMG_LOAD_ERR "Image cannot be loaded - %s\n"
-// #define DIVIDED_BY_THREE *0.33
 
 
 SPPoint **spGetRGBHist(const char *str, int imageIndex, int nBins) {
@@ -25,7 +24,7 @@ SPPoint **spGetRGBHist(const char *str, int imageIndex, int nBins) {
     if(str == NULL || nBins <= 0){ return NULL; }
     // Load image
     cv::Mat img = cv::imread(str);
-    // Check if image is loaded correctly 
+    // Check if image is loaded correctly
     if (img.empty()) {
         printf(IMG_LOAD_ERR, str);
         return NULL;
@@ -37,9 +36,6 @@ SPPoint **spGetRGBHist(const char *str, int imageIndex, int nBins) {
 
     // Set the other parameters:
     int nImages = 1;
-
-    //bool uniform = true; Not needed
-    //bool accumulate = false; Not neneed
 
     cv::Mat hist;
     SPPoint **out = (SPPoint **) malloc(3 * sizeof(SPPoint *));
@@ -61,11 +57,11 @@ double spRGBHistL2Distance(SPPoint **rgbHistA, SPPoint **rgbHistB) {
     for (int i = 0; i < 3; i++) {
         s += spPointL2SquaredDistance(rgbHistA[i], rgbHistB[i]);
     }
-    return s * 0.33; //DIVIDED_BY_THREE;
+    return s * 0.33;
 }
 
 
-SPPoint **spGetSiftDescriptors(const char *str, int imageIndex, 
+SPPoint **spGetSiftDescriptors(const char *str, int imageIndex,
                                 int nFeaturesToExtract, int *nFeatures) {
     // Check if str is NULL argument
     if(str == NULL){ return NULL ;}
@@ -97,15 +93,15 @@ SPPoint **spGetSiftDescriptors(const char *str, int imageIndex,
     // The output type of ds1 is CV_32F (float)
     detect->detect(img, kp1, cv::Mat());
     detect->compute(img, kp1, ds1);
-    
-    *nFeatures = ds1.rows;
+
+    &nFeatures = ds1.rows;
     featuresDim = ds1.cols;
 
     features = (SPPoint**) malloc(*nFeatures * sizeof(SPPoint*));
     if (features == NULL){ return NULL; }
 
 
-    double* tmp_features = (double*) malloc(*nFeatures*sizeof(*tmp_features));
+    double* tmp_features = (double*) malloc(&nFeatures*sizeof(*tmp_features));
     for(int i = 0; i< *nFeatures; i++){
         for (int j = 0; j < featuresDim; j++){
             tmp_features[j] = ds1.at<float>(i,j);
@@ -135,7 +131,7 @@ int *spBestSIFTL2SquaredDistance(int kClosest, SPPoint *queryFeature,
     for(int i = 0; i < numberOfImages; i++){
         for(int j = 0; j<nFeaturesPerImage[i]; j++){
             double dist = spPointL2SquaredDistance(databaseFeatures[i][j], queryFeature);
-            // TODO the enqueue should take to consideration the index, if 
+            // TODO the enqueue should take to consideration the index, if
             // two featutes have same distance with queryFeature, then
             // the smallest index is considered to be closer.
             if(spBPQueueEnqueue(KClosestImages, i, dist) == SP_BPQUEUE_INVALID_ARGUMENT){
@@ -152,8 +148,7 @@ int *spBestSIFTL2SquaredDistance(int kClosest, SPPoint *queryFeature,
         sortedImagesByFeatures[i] = element.index;
     }
 
+    // Free memory
     spBPQueueDestroy(KClosestImages);
     return sortedImagesByFeatures;
-
 }
-

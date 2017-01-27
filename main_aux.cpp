@@ -43,74 +43,89 @@
 
 int readNumberUsingMessage(char * msg){
 	int number;
-	printf(msg);
-	scanf("%d",number);
+	printf("%s",msg);
+	scanf("%d",&number);
 	return number;
 
 }
-char* readStringUsingMessage(char* msg){
-	char dir_path[MAX_BUFFER_SIZE];
-	printf(msg);
-	scanf("%s",dir_path);
-	return dir_path;
+void readStringUsingMessage(char* msg, char *result){
+	// char dir_path[MAX_BUFFER_SIZE];
+	printf("%s", msg);
+	scanf("%s", result);
+	// return &dir_path;
 }
 
 
-const char* mainAuxBuildPath(char* dir, char* prefix, int i, char* suffix){
+const char* mainAuxBuildPath(char* dir, char* prefix, int i, char *suffix){
 	char str[MAX_BUFFER_SIZE];
 	sprintf(str, "%s%s%d%s", dir, prefix, i, suffix);
-	return str;
+	return &str;
 }
 
-bool mainAuxGetParameters(char** stringParametars,int* numericParametars){
+bool mainAuxGetParameters(char *dirPath, char *imgPrefix, char *imgSuffix
+  ,int numOfImages,int nBins,int nFeaturesToExtract){
 	// Input
 	// Images path
-	stringParametars[0] = readStringUsingMessage("Enter images directory path:\n");
+	dirPath = readStringUsingMessage("Enter images directory path:\n");
 
 	// Images prefix
-	stringParametars[1] = readStringUsingMessage("Enter images prefix:\n");
+	imgPrefix = readStringUsingMessage("Enter images prefix:\n");
 
 	// Number of images
-	numericParametars[0] = readNumberUsingMessage("Enter number of images:\n");
-	if(numericParametars[0] < 1){ 
+	numOfImages = readNumberUsingMessage("Enter number of images:\n");
+	if(numOfImages < 1){
 		printf("%s%s",ERR_MSG,IMG_NUM_ERR);
 		return false;
 	}
 
 	// Images suffix
-	stringParametars[2] = readStringUsingMessage("Enter images suffix:\n");
+	imgSuffix = readStringUsingMessage("Enter images suffix:\n");
 
 	// Number of Bins
-	numericParametars[1] = readNumberUsingMessage("Enter number of bins:\n");
-	if(numericParametars[1] < 1 || numericParametars[1] > 255){ 
+	nBins = readNumberUsingMessage("Enter number of bins:\n");
+	if(nBins < 1 || nBins > 255){
 		printf("%s%s",ERR_MSG,BIN_NUM_ERR);
 		return false;
 	}
 
 	// Number of features to extract
-	numericParametars[2] = readNumberUsingMessage("Enter number of features:\n");
-	if(numericParametars[2] < 1){
+	nFeaturesToExtract = readNumberUsingMessage("Enter number of features:\n");
+	if(nFeaturesToExtract < 1){
 		printf("%s%s",ERR_MSG,FEAT_NUM_ERR);
 		return false;
 	}
 	return true;
 }
 
-void mainAuxGlobalDescriptor(SPPoint*** imagesHist, SPPoint** queryHist, int numberOfImages, int k){
+void mainAuxPrintGlobalDescriptor(SPPoint*** imagesHist, SPPoint** queryHist,
+  int numberOfImages, int k){
 	// Create a min-priority queue of size kClosest
 	SPBPQueue *KClosestImages;
-    if((KClosestImages = spBPQueueCreate(k)) == NULL){ return NULL; }
+    if((KClosestImages = spBPQueueCreate(k)) == NULL){ return; }
 	for(int i = 0; i < numberOfImages; i++){
 		double dist = spRGBHistL2Distance(imagesHist[i], queryHist);
 		if(spBPQueueEnqueue(KClosestImages, i, dist) == SP_BPQUEUE_INVALID_ARGUMENT){
-            // todo KClosestImages is NULL argument
+            // TODO KClosestImages is NULL argument
 		}
 	}
 	printf(GLOBAL_DESC);
-	mainAuxPrintIndexQueue(KClosestImages)
+	mainAuxPrintQueueIndex(KClosestImages);
 }
 
-void mainAuxPrintIndexQueue(SPBPQueue *queue) {
+
+void mainAuxPrintLocalDescriptor(SPPoint*** imagesSift, SPPoint** queryFeature,
+  int numberOfImages, int *nFeaturesPerImage, int k){
+    int* index = malloc(k * sizeof(int));
+    index = spBestSIFTL2SquaredDistance(k, queryFeature, imagesSift,
+      numberOfImages, nFeaturesPerImage);
+    for (int i = 0; i < k; i++) {
+      printf("%d",index[i]);
+      if(i != k){ printf(", "); } else { break; }
+    }
+    printf("\n");
+  }
+
+void mainAuxPrintQueueIndex(SPBPQueue *queue) {
     if(queue == NULL) return;
     BPQueueElement element;
     bool isEmpty = spBPQueueIsEmpty(queue);
@@ -123,3 +138,12 @@ void mainAuxPrintIndexQueue(SPBPQueue *queue) {
     }
     printf("\n");
 }
+//
+// bool stringCompare(char* a, char* b){
+//   if(sizeof(a) != sizeof(b)){
+//     return false;
+//   }
+//   for (int i = 0; i < count; i++) {
+//     /* code */
+//   }
+// }
