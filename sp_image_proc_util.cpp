@@ -76,7 +76,7 @@ SPPoint **spGetSiftDescriptors(const char *str, int imageIndex,
 
     // Load image
     cv::Mat img = cv::imread(str, CV_LOAD_IMAGE_GRAYSCALE);
-    // Check if image didn't load
+    // Check if the image didn't load
     if (img.empty()) {
         printf(IMG_LOAD_ERR, str);
         return NULL;
@@ -134,12 +134,12 @@ int *spBestSIFTL2SquaredDistance(int kClosest, SPPoint *queryFeature,
 
     for(int i = 0; i < numberOfImages; i++){
         for(int j = 0; j<nFeaturesPerImage[i]; j++){
-            int dist = spPointL2SquaredDistance(databaseFeatures[i][j], queryFeature);
+            double dist = spPointL2SquaredDistance(databaseFeatures[i][j], queryFeature);
             // TODO the enqueue should take to consideration the index, if 
             // two featutes have same distance with queryFeature, then
             // the smallest index is considered to be closer.
             if(spBPQueueEnqueue(KClosestImages, i, dist) == SP_BPQUEUE_INVALID_ARGUMENT){
-                // KClosestImages is NULL argument
+                // todo KClosestImages is NULL argument
             }
         }
     }

@@ -22,6 +22,10 @@ const char* mainAuxBuildPath(char* dir, char* prefix, int i, char* suffix);
 
 bool mainAuxGetParameters(char** stringParametars,int* numericParametars);
 
-void mainAuxGetGlobalDescriptor(SPPoint*** imagesHist, SPPoint* queryHist, int k);
+void mainAuxPrintGlobalDescriptor(SPPoint*** imagesHist, SPPoint* queryHist, int numberOfImages, int k);
+
+void mainAuxPrintLocalDescriptor();
+
+void mainAuxPrintIndexQueue(SPBPQueue *queue);
 
 #endif

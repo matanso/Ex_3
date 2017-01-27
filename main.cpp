@@ -12,8 +12,6 @@ extern "C" {
 
 #include "sp_image_proc_util.h"
 
-
-
 using namespace std;
 
 
@@ -26,8 +24,18 @@ using namespace std;
 int main() {
 	char dirPath[MAX_BUFFER_SIZE], imgPrefix[MAX_BUFFER_SIZE], imgSuffix[MAX_BUFFER_SIZE];
 	int numOfImages, nBins, nFeaturesToExtract;
-	char* stringParametars = (char*) malloc(3 * sizeof(char));
-	int* numericParametars = (int*) malloc(3 * sizeof(int));
+	char* stringParametars;
+	int* numericParametars, nFeatures;
+	SPPoint*** imagesHist, imagesSift;
+
+
+	if(stringParametars = (char*) malloc(3 * sizeof(char)) == NULL){
+		// todo malloc error
+	}
+	if(numericParametars = (int*) malloc(3 * sizeof(int));) == NULL){
+		// todo malloc error
+	}
+
 
 	// Input
 	if(!mainAuxGetParameters(stringParametars, numericParametars)){
@@ -40,16 +48,23 @@ int main() {
 	nBins = numericParametars[1];
 	nFeaturesToExtract = numericParametars[2];
 
-	SPPoint*** imagesHist = (SPPoint***) malloc(numOfImages * sizeof(SPPoint**))
-	SPPoint*** imagesSift = (SPPoint***) malloc(numOfImages * sizeof(SPPoint**))
-	int *nFeatures = (int*) malloc(numOfImages * sizeof(int));
+	if((imagesHist = (SPPoint***) malloc(numOfImages * sizeof(SPPoint**))) == NULL){
+		// TODO malloc eroor
+	}
+	if((imagesSift = (SPPoint***) malloc(numOfImages * sizeof(SPPoint**))) == NULL){
+		// TODO malloc eroor
+	}
+
+	if((nFeatures = (int*) malloc(numOfImages * sizeof(int))) == NULL){
+		// TODO malloc eroor
+	}
+
 	// For each image in {dir_path} calculate histogram and SIFT
 	for (int i = 0; i < numOfImages; i++){
 		const char* path = mainAuxBuildPath(dir_path, prefix, i, suffix);
 		imagesHist[i] = spGetRGBHist(path, i, nBins);
 		imagesSift[i] = spGetSiftDescriptors(path, i, nFeaturesToExtract, nFeatures + i);
 	}
-
 
 	const char decisonStr[MAX_BUFFER_SIZE];
 	printf(DECISION_MSG);
@@ -61,10 +76,12 @@ int main() {
 	}
 
 	int *queryNumberOfFeature;
-	SPPoint *queryHist = spGetRGBHist(decisonStr, -1, nBins);
+	SPPoint **queryHist = spGetRGBHist(decisonStr, -1, nBins);
 	SPPoint *queryFeature = spGetSiftDescriptors(decisonStr, -1, nFeaturesToExtract, numOfQueryFeatures);
 
-	// mainAuxGetGlobalDescriptor();
+	mainAuxPrintGlobalDescriptor();
+
+	// TODO mainAuxPrintLocalDescriptor() using spBestSIFTL2SquaredDistance() 
 
     return 0;
 }
