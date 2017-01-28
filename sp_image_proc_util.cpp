@@ -5,6 +5,7 @@
 #include "opencv2/features2d/features2d.hpp"
 #include "opencv2/nonfree/features2d.hpp"
 #include "sp_image_proc_util.h"
+#include "main_aux.h"
 
 
 #define IMG_LOAD_ERR "Image cannot be loaded - %s\n"
@@ -29,9 +30,18 @@ SPPoint **spGetRGBHist(const char *str, int imageIndex, int nBins) {
 
     cv::Mat hist;
     SPPoint **out = (SPPoint **) malloc(3 * sizeof(SPPoint *));
+    if(out == NULL)
+        return NULL;
+
 
     double *data = (double *) malloc(nBins * sizeof(double));
-    if(data == NULL) return NULL;
+    if(data == NULL)
+    {
+        printError(ALLOC_ERR);
+        free(out);
+        return NULL;
+    }
+
     // Compute the histograms:
     for (int i = 0; i < 3; i++) {
         calcHist(&img, nImages, &i, cv::Mat(), hist, 1, &nBins, &histRange);
@@ -65,9 +75,6 @@ SPPoint **spGetSiftDescriptors(const char *str, int imageIndex,
         return NULL;
     }
 
-    int featuresDim;
-    SPPoint **features;
-
     // Key points will be stored in kp;
     std::vector<cv::KeyPoint> kp;
     // Feature values will be stored in ds;
@@ -81,13 +88,22 @@ SPPoint **spGetSiftDescriptors(const char *str, int imageIndex,
     detect.compute(img, kp, ds);
 
     *nFeatures = ds.rows;
-    featuresDim = ds.cols;
+    int featuresDim = ds.cols;
 
-    features = (SPPoint **) malloc(*nFeatures * sizeof(SPPoint *));
-    if (features == NULL) { return NULL; }
+    SPPoint **features = (SPPoint **) malloc(*nFeatures * sizeof(SPPoint *));
+    if (features == NULL) {
+        printError(ALLOC_ERR);
+        return NULL;
+    }
 
 
     double *tmp_features = (double *) malloc(featuresDim * sizeof(double));
+    if(tmp_features == NULL) {
+        printError(ALLOC_ERR);
+        free(features);
+        return NULL;
+    }
+
     for (int i = 0; i < *nFeatures; i++) {
         for (int j = 0; j < featuresDim; j++) {
             tmp_features[j] = ds.at<float>(i, j);
@@ -112,6 +128,7 @@ int *spBestSIFTL2SquaredDistance(int kClosest, SPPoint *queryFeature,
         for (int j = 0; j < nFeaturesPerImage[i]; j++) {
             double dist = spPointL2SquaredDistance(databaseFeatures[i][j], queryFeature);
             if (spBPQueueEnqueue(KClosestImages, i, dist) != SP_BPQUEUE_SUCCESS) {
+                spBPQueueDestroy(KClosestImages);
                 return NULL;
             }
         }
@@ -120,6 +137,11 @@ int *spBestSIFTL2SquaredDistance(int kClosest, SPPoint *queryFeature,
     // The returned array of closest features to queryFeature
     int size = spBPQueueSize(KClosestImages);
     int *sortedImagesByFeatures = (int *) malloc(size * sizeof(int));
+    if(sortedImagesByFeatures == NULL) {
+        printError(ALLOC_ERR);
+        spBPQueueDestroy(KClosestImages);
+        return NULL;
+    }
     BPQueueElement element;
     for (int i = 0; i < size; i++) {
         spBPQueuePeek(KClosestImages, &element);
