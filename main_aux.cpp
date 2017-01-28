@@ -15,31 +15,6 @@
 #define FEAT_NUM_ERR "invalid number of features\n"
 #define GLOBAL_DESC "Nearest images using global descriptors:\n"
 
-// TODO check if we can use this to report errors
-#define report_error(str)                                                      \
-  do {                                                                         \
-    printf("Error: %s, line %d\n", (str), __LINE__);                           \
-    return NULL;                                                               \
-  } while (0)
-#define report_error_exit(str)                                                 \
-  do {                                                                         \
-    printf("Error: %s, line %d\n", (str), __LINE__);                           \
-    exit(-1);                                                                  \
-  } while (0)
-#define report_error_ret(str, ret)                                             \
-  do {                                                                         \
-    printf("Error: %s, line %d\n", (str), __LINE__);                           \
-    return (ret);                                                              \
-  } while (0)
-
-#define report_error_msg(msg)                                                  \
-  do {                                                                         \
-    printf("Image cannot be loaded - %s:\n", msg);                             \
-    exit(-1);                                                                  \
-  }                                                                            \
-  }                                                                            \
-  while (0)
-
 int readNumberUsingMessage(const char *msg) {
   int number;
   printf("%s", msg);
@@ -48,10 +23,8 @@ int readNumberUsingMessage(const char *msg) {
 }
 
 void readStringUsingMessage(const char *msg, char *result) {
-  // char dir_path[MAX_BUFFER_SIZE];
   printf("%s", msg);
   scanf("%s", result);
-  // return &dir_path;
 }
 
 void mainAuxBuildPath(char *dir, char *prefix, int i, char *suffix,
@@ -62,7 +35,7 @@ void mainAuxBuildPath(char *dir, char *prefix, int i, char *suffix,
 bool mainAuxGetParameters(char *dirPath, char *imgPrefix, char *imgSuffix,
                           int numOfImages, int nBins, int nFeaturesToExtract) {
   // Input
-  // Directory path for images
+  // Directory path to images
   readStringUsingMessage("Enter images directory path:\n", dirPath);
 
   // Images prefix
@@ -137,7 +110,7 @@ void mainAuxPrintQueueIndex(SPBPQueue *queue) {
     return;
   BPQueueElement element;
   bool isEmpty = spBPQueueIsEmpty(queue);
-  while (!isEmpty) { // Printing k nearest points
+  while (!isEmpty) {
     assert(spBPQueuePeek(queue, &element) == SP_BPQUEUE_SUCCESS);
     printf("%d", element.index);
     assert(spBPQueueDequeue(queue) == SP_BPQUEUE_SUCCESS);
@@ -147,13 +120,14 @@ void mainAuxPrintQueueIndex(SPBPQueue *queue) {
   }
   printf("\n");
 }
-//
-// bool stringCompare(char* a, char* b){
-//   if(sizeof(a) != sizeof(b)){
-//     return false;
-//   }
-//   for (int i = 0; i < sizeof(a)/sizeof(char) ; i++) {
-//   	  if(a[i] != b[i]) return false;
-//   }
-//   return true;
-// }
+
+bool stringCompare(char *str1, char *str2) {
+  if (str1 == NULL || str2 == NULL)
+    return false;
+  if (sizeof(str1) != sizeof(str2))
+    return false;
+  for (int i = 0; i < sizeof(a) / sizeof(char); i++)
+    if (str1[i] != str2[i])
+      return false;
+  return true;
+}
