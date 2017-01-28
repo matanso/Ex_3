@@ -1,11 +1,17 @@
-#include "main_aux.h"
-#include "sp_image_proc_util.h"
 #include <opencv2/core.hpp> //Mat
 #include <opencv2/features2d.hpp>
 #include <opencv2/highgui.hpp> //imshow, drawKeypoints, waitKey
 #include <opencv2/imgproc.hpp>
 #include <opencv2/xfeatures2d.hpp> //SiftDescriptorExtractor
 #include <vector>
+
+extern "C" {
+#include "SPBPriorityQueue.h"
+#include "SPPoint.h"
+}
+
+#include "main_aux.h"
+#include "sp_image_proc_util.h"
 
 #define MAX_BUFFER_SIZE 1024
 
