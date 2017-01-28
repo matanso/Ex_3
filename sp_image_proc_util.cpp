@@ -1,29 +1,19 @@
-#include <opencv2/highgui.hpp> //imshow, drawKeypoints, waitKey
-#include <opencv2/imgproc.hpp>
-#include <opencv2/core.hpp>//Mat
-#include <opencv2/xfeatures2d.hpp>//SiftDescriptorExtractor
-#include <opencv2/features2d.hpp>
-#include <vector>
+#include <stdio.h>
+#include <opencv2/core/core.hpp>
+#include <opencv2/highgui/highgui.hpp> //imshow, drawKeypoints, waitKey
+#include <opencv2/imgproc/imgproc.hpp>
+#include "opencv2/features2d/features2d.hpp"
+#include "opencv2/nonfree/features2d.hpp"
 #include "sp_image_proc_util.h"
-
-#include "SPPoint.h"
-#include "SPBPriorityQueue.h"
-
-
-// extern "C" {
-// #include "SPPoint.h"
-// #include "SPBPriorityQueue.h"
-// } TODO find out if to put this in extern or not
 
 
 #define IMG_LOAD_ERR "Image cannot be loaded - %s\n"
 
-
 SPPoint **spGetRGBHist(const char *str, int imageIndex, int nBins) {
     // Check if str is NULL argument or nBins <= 0
-    if(str == NULL || nBins <= 0){ return NULL; }
+    if (str == NULL || nBins <= 0 || nBins > 255) return NULL;
     // Load image
-    cv::Mat img = cv::imread(str);
+    cv::Mat img = cv::imread(str, CV_LOAD_IMAGE_COLOR);
     // Check if image is loaded correctly
     if (img.empty()) {
         printf(IMG_LOAD_ERR, str);
@@ -34,20 +24,21 @@ SPPoint **spGetRGBHist(const char *str, int imageIndex, int nBins) {
     float range[] = {0, 256};
     const float *histRange = {range};
 
-    // Set the other parameters:
+    // Set the other parameters
     int nImages = 1;
 
     cv::Mat hist;
     SPPoint **out = (SPPoint **) malloc(3 * sizeof(SPPoint *));
 
+    double *data = (double *) malloc(nBins * sizeof(double));
+    if(data == NULL) return NULL;
     // Compute the histograms:
     for (int i = 0; i < 3; i++) {
         calcHist(&img, nImages, &i, cv::Mat(), hist, 1, &nBins, &histRange);
-        double *data = (double *) malloc(nBins * sizeof(double));
         for (int j = 0; j < nBins; j++) data[j] = hist.data[j];
         out[i] = spPointCreate(data, nBins, imageIndex);
-        free(data);
     }
+    free(data);
     return out;
 }
 
@@ -63,15 +54,11 @@ double spRGBHistL2Distance(SPPoint **rgbHistA, SPPoint **rgbHistB) {
 
 SPPoint **spGetSiftDescriptors(const char *str, int imageIndex,
                                int nFeaturesToExtract, int *nFeatures) {
-    // Check if str is NULL argument
-    if(str == NULL){ return NULL ;}
-    // Check if nFeatures is NULL
-    if(nFeatures == NULL){ return NULL ;}
-    // Check if nFeaturesToExtract argument is valid
-    if(nFeaturesToExtract <= 0){ return NULL ;}
+
+    if (str == NULL || nFeatures == NULL || nFeaturesToExtract <= 0) return NULL;
 
     // Load image
-    cv::Mat img = cv::imread(str, CV_LOAD_IMAGE_GRAYSCALE);
+    cv::Mat img = cv::imread(str);
     // Check if the image didn't load
     if (img.empty()) {
         printf(IMG_LOAD_ERR, str);
@@ -79,32 +66,31 @@ SPPoint **spGetSiftDescriptors(const char *str, int imageIndex,
     }
 
     int featuresDim;
-    SPPoint** features;
+    SPPoint **features;
 
-    // Key points will be stored in kp1;
-    std::vector<cv::KeyPoint> kp1;
-    // Feature values will be stored in ds1;
-    cv::Mat ds1;
+    // Key points will be stored in kp;
+    std::vector<cv::KeyPoint> kp;
+    // Feature values will be stored in ds;
+    cv::Mat ds;
     // Creating  a Sift Descriptor extractor
-    cv::Ptr<cv::xfeatures2d::SiftDescriptorExtractor> detect =
-            cv::xfeatures2d::SIFT::create(nFeaturesToExtract);
+    cv::SiftDescriptorExtractor detect = cv::SIFT(nFeaturesToExtract);
     // Extracting features
-    // The features will be stored in ds1
-    // The output type of ds1 is CV_32F (float)
-    detect->detect(img, kp1, cv::Mat());
-    detect->compute(img, kp1, ds1);
+    // The features will be stored in ds
+    // The output type of ds is CV_32F (float)
+    detect.detect(img, kp, cv::Mat());
+    detect.compute(img, kp, ds);
 
-    *nFeatures = ds1.rows;
-    featuresDim = ds1.cols;
+    *nFeatures = ds.rows;
+    featuresDim = ds.cols;
 
-    features = (SPPoint**) malloc(*nFeatures * sizeof(SPPoint*));
-    if (features == NULL){ return NULL; }
+    features = (SPPoint **) malloc(*nFeatures * sizeof(SPPoint *));
+    if (features == NULL) { return NULL; }
 
 
-    double* tmp_features = (double*) malloc(*nFeatures*sizeof(*tmp_features));
-    for(int i = 0; i< *nFeatures; i++){
-        for (int j = 0; j < featuresDim; j++){
-            tmp_features[j] = ds1.at<float>(i,j);
+    double *tmp_features = (double *) malloc(featuresDim * sizeof(double));
+    for (int i = 0; i < *nFeatures; i++) {
+        for (int j = 0; j < featuresDim; j++) {
+            tmp_features[j] = ds.at<float>(i, j);
         }
         features[i] = spPointCreate(tmp_features, featuresDim, imageIndex);
     }
@@ -115,37 +101,30 @@ SPPoint **spGetSiftDescriptors(const char *str, int imageIndex,
 int *spBestSIFTL2SquaredDistance(int kClosest, SPPoint *queryFeature,
                                  SPPoint ***databaseFeatures, int numberOfImages,
                                  int *nFeaturesPerImage) {
-    // Check if queryFeature is NULL
-    if(queryFeature == NULL) { return NULL; }
-    // Check if databaseFeatures is NULL
-    if(databaseFeatures == NULL) { return NULL; }
-    // Check if nFeaturesPerImage is NULL
-    if(nFeaturesPerImage == NULL) { return NULL; }
-    // Check if numberOfImages <= 1
-    if(numberOfImages <= 1){ return NULL; }
+    if (queryFeature == NULL || databaseFeatures == NULL || nFeaturesPerImage == NULL || numberOfImages <= 1)
+        return NULL;
 
     // Create a min-priority queue of size kClosest
     SPBPQueue *KClosestImages = spBPQueueCreate(kClosest);
-    if(KClosestImages == NULL){ return NULL; }
+    if (KClosestImages == NULL) return NULL;
 
-    for(int i = 0; i < numberOfImages; i++){
-        for(int j = 0; j<nFeaturesPerImage[i]; j++){
+    for (int i = 0; i < numberOfImages; i++) {
+        for (int j = 0; j < nFeaturesPerImage[i]; j++) {
             double dist = spPointL2SquaredDistance(databaseFeatures[i][j], queryFeature);
-            // TODO the enqueue should take to consideration the index, if
-            // two featutes have same distance with queryFeature, then
-            // the smallest index is considered to be closer.
-            if(spBPQueueEnqueue(KClosestImages, i, dist) == SP_BPQUEUE_INVALID_ARGUMENT){
-                // todo KClosestImages is NULL argument
+            if (spBPQueueEnqueue(KClosestImages, i, dist) != SP_BPQUEUE_SUCCESS) {
+                return NULL;
             }
         }
     }
 
     // The returned array of closest features to queryFeature
-    int* sortedImagesByFeatures = (int*) malloc(spBPQueueSize(KClosestImages)*sizeof(int));
+    int size = spBPQueueSize(KClosestImages);
+    int *sortedImagesByFeatures = (int *) malloc(size * sizeof(int));
     BPQueueElement element;
-    for (int i = 0; i < spBPQueueSize(KClosestImages) ; i++){
+    for (int i = 0; i < size; i++) {
         spBPQueuePeek(KClosestImages, &element);
         sortedImagesByFeatures[i] = element.index;
+        spBPQueueDequeue(KClosestImages);
     }
 
     // Free memory

@@ -1,168 +1,75 @@
-#include <opencv2/core.hpp> //Mat
-#include <opencv2/features2d.hpp>
-#include <opencv2/highgui.hpp> //imshow, drawKeypoints, waitKey
-#include <opencv2/imgproc.hpp>
-#include <opencv2/xfeatures2d.hpp> //SiftDescriptorExtractor
-#include <vector>
+#include <stdio.h>
+#include <cstdlib>
+#include <assert.h>
 
 extern "C" {
-#include "SPBPriorityQueue.h"
 #include "SPPoint.h"
 }
 
 #include "main_aux.h"
-#include "sp_image_proc_util.h"
-
-using namespace std;
 
 #define MAX_BUFFER_SIZE 1024
+
+#define ALLOC_ERR (const char *) "allocation failure"
 
 #define DECISION_MSG "Enter a query image or # to terminate:\n"
 #define EXIT_MSG "Exiting...\n"
 
 int main() {
-  char dirPath[MAX_BUFFER_SIZE], imgPrefix[MAX_BUFFER_SIZE],
-      imgSuffix[MAX_BUFFER_SIZE];
-  int numOfImages, nBins, nFeaturesToExtract;
-  int *nFeaturesPerImage, *numOfQueryFeatures = 0;
-  SPPoint **queryFeature, **queryHist;
-  SPPoint ***imagesHist, ***imagesSift;
-  // Input
-  numOfImages = nBins = nFeaturesToExtract = 0;
-  if (!mainAuxGetParameters(dirPath, imgPrefix, imgSuffix, numOfImages, nBins,
-                            nFeaturesToExtract)) {
-    return 0;
-  }
+    char dirPath[MAX_BUFFER_SIZE],
+            imgPrefix[MAX_BUFFER_SIZE],
+            imgSuffix[MAX_BUFFER_SIZE],
+            decisionStr[MAX_BUFFER_SIZE];
 
-  if ((imagesHist = (SPPoint ***)malloc(numOfImages * sizeof(SPPoint **))) ==
-      NULL) {
-    // TODO malloc error
-  }
-  if ((imagesSift = (SPPoint ***)malloc(numOfImages * sizeof(SPPoint **))) ==
-      NULL) {
-    // TODO malloc error
-  }
+    int numOfImages, nBins, nFeaturesToExtract, numOfQueryFeatures;
+    int *nFeaturesPerImage;
+    SPPoint **query;
+    SPPoint ***imagesHist, ***imagesSift;
+    // Input
+    numOfImages = nBins = nFeaturesToExtract = 0;
+    if (!mainAuxGetParameters(dirPath, imgPrefix, imgSuffix, numOfImages, nBins,
+                              nFeaturesToExtract)) {
+        return 0;
+    }
 
-  if ((nFeaturesPerImage = (int *)malloc(numOfImages * sizeof(int))) == NULL) {
-    // TODO malloc error
-  }
+    imagesHist = (SPPoint ***) malloc(numOfImages * sizeof(SPPoint **));
+    imagesSift = (SPPoint ***) malloc(numOfImages * sizeof(SPPoint **));
+    nFeaturesPerImage = (int *) malloc(numOfImages * sizeof(int));
 
-  char path[MAX_BUFFER_SIZE];
-  // For each image in {dir_path} calculate histogram and SIFT
-  for (int i = 0; i < numOfImages; i++) {
-    mainAuxBuildPath(dirPath, imgPrefix, i, imgSuffix, path);
-    imagesHist[i] = spGetRGBHist((const char *)path, i, nBins);
-    imagesSift[i] = spGetSiftDescriptors(
-        (const char *)path, i, nFeaturesToExtract, nFeaturesPerImage + i);
-  }
+    if(imagesHist == NULL || imagesSift == NULL || nFeaturesPerImage == NULL) {
+        printError(ALLOC_ERR);
+        free(imagesHist);
+        free(imagesSift);
+        free(nFeaturesPerImage);
+        return false;
+    }
 
-  char decisonStr[MAX_BUFFER_SIZE];
-  printf(DECISION_MSG);
-  scanf("%s", decisonStr);
-  if (stringCompare(decisonStr[0], '#')) {
-    printf(EXIT_MSG);
-    return 0;
-  }
-
-  do {
-
-    queryHist = spGetRGBHist(decisonStr, -1, nBins);
-    queryFeature = spGetSiftDescriptors(decisonStr, -1, nFeaturesToExtract,
-                                        numOfQueryFeatures);
-
-    mainAuxPrintGlobalDescriptor(imagesHist, queryHist, numOfImages, 5);
-
-    mainAuxPrintLocalDescriptor(imagesSift, queryFeature, numOfQueryFeatures,
-                                numOfImages, nFeaturesPerImage, 5);
+    char path[MAX_BUFFER_SIZE];
+    // For each image in {dir_path} calculate histogram and SIFT
+    for (int i = 0; i < numOfImages; i++) {
+        mainAuxBuildPath(dirPath, imgPrefix, i, imgSuffix, path);
+        imagesHist[i] = spGetRGBHist(path, i, nBins);
+        imagesSift[i] = spGetSiftDescriptors(path, i, nFeaturesToExtract, nFeaturesPerImage + i);
+    }
 
     printf(DECISION_MSG);
-    scanf("%s", decisonStr);
-  } while (decisonStr[0] != '#');
-  printf(EXIT_MSG);
-  return 0;
-}
-== == == =
-#include <opencv2/core.hpp>    //Mat
-#include <opencv2/highgui.hpp> //imshow, drawKeypoints, waitKey
-#include <opencv2/imgproc.hpp>
-//#include <opencv2/xfeatures2d.hpp>//SiftDescriptorExtractor
-#include "string.h"
-#include <opencv2/features2d.hpp>
-#include <vector>
+    scanf("%s", decisionStr);
+    while (decisionStr[0] != '#') {
+        // Global descriptors
+        query = spGetRGBHist(decisionStr, -1, nBins);
+        mainAuxPrintGlobalDescriptor(imagesHist, query, numOfImages, 5);
+        freeQuery(query, 3);
 
-             extern "C" {
-#include "SPBPriorityQueue.h"
-#include "SPPoint.h"
-}
+        // Local descriptors
+        query = spGetSiftDescriptors(decisionStr, -1, nFeaturesToExtract,
+                                            &numOfQueryFeatures);
+        mainAuxPrintLocalDescriptor(imagesSift, query, numOfQueryFeatures,
+                                    numOfImages, nFeaturesPerImage, 5);
+        freeQuery(query, numOfQueryFeatures);
 
-#include "main_aux.h"
-#include "sp_image_proc_util.h"
-
-using namespace std;
-
-#define MAX_BUFFER_SIZE 1024
-
-#define DECISION_MSG "Enter a query image or # to terminate:\n"
-#define EXIT_MSG "Exiting...\n"
-
-int main() {
-  char dirPath[MAX_BUFFER_SIZE], imgPrefix[MAX_BUFFER_SIZE],
-      imgSuffix[MAX_BUFFER_SIZE];
-  int numOfImages, nBins, nFeaturesToExtract;
-  int *nFeaturesPerImage;
-  SPPoint **queryFeature, **queryHist;
-  SPPoint ***imagesHist, ***imagesSift;
-  // Input
-  numOfImages = nBins = nFeaturesToExtract = 0;
-  if (!mainAuxGetParameters(dirPath, imgPrefix, imgSuffix, numOfImages, nBins,
-                            nFeaturesToExtract)) {
-    return 0;
-  }
-
-  if ((imagesHist = (SPPoint ***)malloc(numOfImages * sizeof(SPPoint **))) ==
-      NULL) {
-    // TODO malloc error
-  }
-  if ((imagesSift = (SPPoint ***)malloc(numOfImages * sizeof(SPPoint **))) ==
-      NULL) {
-    // TODO malloc error
-  }
-
-  if ((nFeaturesPerImage = (int *)malloc(numOfImages * sizeof(int))) == NULL) {
-    // TODO malloc error
-  }
-
-  char path[MAX_BUFFER_SIZE];
-  // For each image in {dir_path} calculate histogram and SIFT
-  for (int i = 0; i < numOfImages; i++) {
-    mainAuxBuildPath(dirPath, imgPrefix, i, imgSuffix, path);
-    imagesHist[i] = spGetRGBHist((const char *)path, i, nBins);
-    imagesSift[i] = spGetSiftDescriptors(
-        (const char *)path, i, nFeaturesToExtract, nFeaturesPerImage + i);
-  }
-
-  char decisonStr[MAX_BUFFER_SIZE];
-  printf(DECISION_MSG);
-  scanf("%s", decisonStr);
-
-  if (decisonStr[0] == '#') {
+        printf(DECISION_MSG);
+        scanf("%s", decisionStr);
+    }
     printf(EXIT_MSG);
     return 0;
-  }
-
-  // TODO Can we get rid of it?
-  int *numOfQueryFeatures = 0;
-
-  queryHist = spGetRGBHist(decisonStr, -1, nBins);
-  queryFeature = spGetSiftDescriptors(decisonStr, -1, nFeaturesToExtract,
-                                      numOfQueryFeatures);
-  // free(queryNumberOfFeature);
-
-  mainAuxPrintGlobalDescriptor(imagesHist, queryHist, numOfImages, 5);
-
-  mainAuxPrintLocalDescriptor(imagesSift, queryFeature, numOfQueryFeatures,
-                              numOfImages, nFeaturesPerImage, 5);
-
-  return 0;
 }
->>>>>>> 7cd5a88cab246c8cfd1dcda45a19e546038f2ac1
