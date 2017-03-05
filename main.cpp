@@ -50,7 +50,7 @@ int main() {
 
         // Local descriptors
         query = spGetSiftDescriptors(decisionStr, -1, nFeaturesToExtract,
-                                            &numOfQueryFeatures);
+                                     &numOfQueryFeatures);
         if(query == NULL) continue;
         mainAuxPrintLocalDescriptor(imagesSift, query, numOfQueryFeatures,
                                     numOfImages, nFeaturesPerImage, 5);
