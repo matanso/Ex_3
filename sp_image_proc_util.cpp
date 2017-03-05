@@ -30,13 +30,12 @@ SPPoint **spGetRGBHist(const char *str, int imageIndex, int nBins) {
 
     cv::Mat hist;
     SPPoint **out = (SPPoint **) malloc(3 * sizeof(SPPoint *));
-    if(out == NULL)
+    if (out == NULL)
         return NULL;
 
 
     double *data = (double *) malloc(nBins * sizeof(double));
-    if(data == NULL)
-    {
+    if (data == NULL) {
         printError(ALLOC_ERR);
         free(out);
         return NULL;
@@ -98,7 +97,7 @@ SPPoint **spGetSiftDescriptors(const char *str, int imageIndex,
 
 
     double *tmp_features = (double *) malloc(featuresDim * sizeof(double));
-    if(tmp_features == NULL) {
+    if (tmp_features == NULL) {
         printError(ALLOC_ERR);
         free(features);
         return NULL;
@@ -137,7 +136,7 @@ int *spBestSIFTL2SquaredDistance(int kClosest, SPPoint *queryFeature,
     // The returned array of closest features to queryFeature
     int size = spBPQueueSize(KClosestImages);
     int *sortedImagesByFeatures = (int *) malloc(size * sizeof(int));
-    if(sortedImagesByFeatures == NULL) {
+    if (sortedImagesByFeatures == NULL) {
         printError(ALLOC_ERR);
         spBPQueueDestroy(KClosestImages);
         return NULL;
